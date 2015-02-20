@@ -1,0 +1,6 @@
+[submodule "SConsChecks"]
+    path = SConsChecks
+    url = git@github.com:ChrislS/SConsChecks.git
+[submodule "caffe-framework"]
+    path = caffe-framework
+    url = git@github.com:ChrislS/caffe.git
