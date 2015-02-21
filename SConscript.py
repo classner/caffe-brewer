@@ -8,16 +8,23 @@ import sysconfig
 import subprocess
 from SConsChecks import AddLibOptions, GetLibChecks
 
-_libs = ['boost.datetime',      # leveldb
+_libs = ['boost.datetime',
+         'boost.system',
          'boost.filesystem',
          'boost.interprocess',
          'boost.thread',
-         'swig']
+         'hdf5',
+         'openblas',
+         'opencv',
+         'boost.python']
 
 _checks = GetLibChecks(_libs)
 
 def getRequiredLibs():
-  return _libs
+  if GetOption("with_python"):
+    return _libs
+  else:
+    return [lib for lib in _libs if not lib == 'boost.python']
 
 ####################################
 # Command line length fix for compilers other than MSVC on Windows.
@@ -74,6 +81,8 @@ def setupOptions():
               help="runtime link paths to add to libraries and executables (unix); may be passed more than once")
     AddOption("--cpu-only", help="build only CPU support without GPU", action="store_true",
               dest="cpu_only", default=False)
+    AddOption("--with-python", help="build the Python interface", action="store_true",
+              dest="with_python", default=False)
     # Add library configuration options.
     AddLibOptions(AddOption, _libs)
     # Default variables.
@@ -98,13 +107,12 @@ def makeEnvironment(variables):
             shellEnv[key] = os.environ[key]
     # Create build enviromnent.
     env = Environment(variables=variables, ENV=shellEnv)
-    env["CUDA_TOOLKIT_PATH"] = os.environ["CUDA_TOOLKIT_PATH"]
-    env["CUDA_SDK_PATH"] = os.environ["CUDA_TOOLKIT_PATH"]
     if not GetOption("cpu_only"):
         env.Tool('nvcc')
         # cudart is automatically added by the cuda build tool.
         env.AppendUnique(LIBS=['cublas', 'cublas_device',
                                'cufft', 'curand'])
+    env.Tool('protoc')
     # Append environment compiler flags.
     if env.Dictionary().has_key("CCFLAGS"):
         if isinstance(env['CCFLAGS'], basestring):
@@ -159,38 +167,60 @@ def makeEnvironment(variables):
       env.AppendUnique(CPPFLAGS=['/MD'])
     # Main library include folder.
     env.PrependUnique(CPPPATH=[Dir('#caffe-framework/include').abspath])
-    # contains the gtest includes.
+    # Contains the gtest includes.
     env.PrependUnique(CPPPATH=[Dir('#caffe-framework/src').abspath])
+    # Configuration options.
+    if GetOption('cpu_only'):
+        env.AppendUnique(CPPDEFINES=['CPU_ONLY'])
     # Add dependency include folders.
     print env['CPPPATH']
-    env.PrependUnique(CPPPATH=[Dir('#dependencies/glog-0.3.3/src/windows').abspath])
-    env.PrependUnique(CPPPATH=[Dir('#dependencies/gflags-2.1.1/include').abspath])
-    env.PrependUnique(CPPPATH=[Dir(r'C:\Users\lassnech\Desktop\git\protobuf\src').abspath])
-    env.PrependUnique(CPPPATH=[Dir(r'C:\Libraries\OpenBLAS-v0.2.13-Win64-int64\include').abspath])
-    env.PrependUnique(CPPPATH=[Dir(r'P:\temp\opencv\opencv\build\include').abspath])
-    env.PrependUnique(CPPPATH=[Dir(r'C:\Libraries\HDF5\1.8.14\include').abspath])
-    env.PrependUnique(CPPPATH=[Dir(r'C:\Users\lassnech\Desktop\git\leveldb\include').abspath])
-    env.PrependUnique(CPPPATH=[Dir(r'C:\Users\lassnech\Desktop\git\mdb\libraries\liblmdb').abspath])
-    env.PrependUnique(CPPPATH=[Dir('#proto_include').abspath])
-    #for ipth in env['CPPPATH']:
-    #    env.PrependUnique(NVCCFLAGS=['-I"%s"' % ipth])
+    if os.name == 'nt':
+        env.PrependUnique(CPPPATH=[Dir('#dependencies/glog-0.3.3/src/windows').abspath])
+        env.PrependUnique(CPPPATH=[Dir('#dependencies/gflags-2.1.1/include').abspath])
+    else:
+        env.PrependUnique(CPPPATH=[Dir('#dependencies/gflags-2.1.1-linux/include').abspath])
+    env.PrependUnique(CPPPATH=[Dir(r'#dependencies/leveldb/include').abspath])
+    env.PrependUnique(CPPPATH=[Dir(r'#dependencies/mdb/libraries/liblmdb').abspath])
+    if os.name != 'nt':
+        env.AppendUnique(LIBS=['pthread', 'glog', 'protobuf'])
+        env.AppendUnique(CPPFLAGS=['-fPIC'])
     return env
 
 def setupTargets(env, root="."):
-    file_list = Glob('caffe-framework/src/caffe/*.cpp') #+ \
-    cu_file_list = Glob('caffe-framework/src/caffe/layers/*.cu')# + \
-                #Glob('caffe-framework/src/caffe/util/*.cpp') #+ \
-                #Glob('caffe-framework/src/caffe/layers/*.cu') + \
-    # Excludes
-    file_list = [fn for fn in file_list \
-                 if not str(fn).endswith("123data_transformer.cpp") and \
-                    not str(fn).endswith("env_posix.cc") and \
-                    not str(fn).endswith("env_chromium.cc")]
-    headers = Glob('caffe-framework/include/caffe/*.hpp') + \
-              Glob('caffe-framework/include/caffe/util/*.hpp')
-    lib = env.SharedLibrary('caffe', file_list)
-    #env['CPPDEFINES'] = []
-    culib = env.StaticLibrary('caffegpu', cu_file_list)
+    # Create the protobuffer files.
+    proto_files = env.Protoc('caffe-framework/src/caffe/proto/caffe.proto',
+                             PROTOC_PATH='#caffe-framework/src/caffe/proto',
+                             PROTOC_CCOUT='#caffe-framework/src/caffe/proto')
+    # Build gflags.
+    gflags_lib, gflags_headers = SConscript(os.path.join(root, "dependencies", "gflags.py"),
+                                    exports=['env'],
+                                    variant_dir='build/gflags')
+    # Build glog on Windows.
+    # Build leveldb.
+    leveldb_lib, leveldb_headers = SConscript(os.path.join(root, "dependencies", "leveldb.py"),
+                                    exports=['env'],
+                                    variant_dir='build/leveldb')
+    # Build lmdb.
+    mdb_lib, mdb_headers = SConscript(os.path.join(root, "dependencies", "mdb.py"),
+                                      exports=['env'],
+                                      variant_dir='build/mdb')
+    # Build the CUDA parts.
+    cu_objects = SConscript(os.path.join(root, "gpu.py"),
+                            exports=['env'],
+                            variant_dir='build/CUDA')
+    # Build the library core.
+    lib, headers = SConscript(os.path.join(root, "core.py"),
+                              exports=['proto_files', 'cu_objects', 'env'],
+                              variant_dir='build/core')
+    link_libs = [lib, mdb_lib, leveldb_lib, gflags_lib]
+    # Build the tests.
+    test_program = SConscript(os.path.join(root, "tests.py"),
+                              exports=['link_libs', 'env'],
+                              variant_dir='build/tests')
+    # Build the python interface.
+    pycaffe = SConscript(os.path.join(root, "python.py"),
+                         exports=['link_libs', 'env'],
+                         variant_dir='build/python')
     if os.name == 'nt':
         #project_lib = env.InstallAs(os.path.join(Dir('#lib').abspath, os.path.basename(lib[1].abspath)), lib[1])
         project_bin = env.InstallAs(os.path.join(Dir('#bin').abspath, os.path.basename(lib[0].abspath)), lib[0])

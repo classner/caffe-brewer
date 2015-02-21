@@ -1,0 +1,10 @@
+.sconf_temp
+.sconsign.dblite
+bin
+build
+config.log
+*.a
+*.la
+*.o
+*.lo
+*.pyc
