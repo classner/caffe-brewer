@@ -16,15 +16,18 @@ _libs = ['boost.datetime',
          'hdf5',
          'openblas',
          'opencv',
-         'boost.python']
+         'boost.python',
+         'cuda']
 
 _checks = GetLibChecks(_libs)
 
 def getRequiredLibs():
-  if GetOption("with_python"):
-    return _libs
-  else:
-    return [lib for lib in _libs if not lib == 'boost.python']
+  req_libs = _libs[:]
+  if not GetOption("with_python"):
+    req_libs = [lib for lib in req_libs if not lib == 'boost.python']
+  if GetOption("cpu_only"):
+	req_libs = [lib for lib in req_libs if not lib == 'cuda']
+  return req_libs
 
 ####################################
 # Command line length fix for compilers other than MSVC on Windows.
@@ -109,9 +112,6 @@ def makeEnvironment(variables):
     env = Environment(variables=variables, ENV=shellEnv)
     if not GetOption("cpu_only"):
         env.Tool('nvcc')
-        # cudart is automatically added by the cuda build tool.
-        env.AppendUnique(LIBS=['cublas', 'cublas_device',
-                               'cufft', 'curand'])
     env.Tool('protoc')
     # Append environment compiler flags.
     if env.Dictionary().has_key("CCFLAGS"):
@@ -217,10 +217,11 @@ def setupTargets(env, root="."):
     test_program = SConscript(os.path.join(root, "tests.py"),
                               exports=['link_libs', 'env'],
                               variant_dir='build/tests')
-    # Build the python interface.
-    pycaffe = SConscript(os.path.join(root, "python.py"),
-                         exports=['link_libs', 'env'],
-                         variant_dir='build/python')
+    if GetOption("with_python"):
+		# Build the python interface.
+		pycaffe = SConscript(os.path.join(root, "python.py"),
+							 exports=['link_libs', 'env'],
+							 variant_dir='build/python')
     if os.name == 'nt':
         #project_lib = env.InstallAs(os.path.join(Dir('#lib').abspath, os.path.basename(lib[1].abspath)), lib[1])
         project_bin = env.InstallAs(os.path.join(Dir('#bin').abspath, os.path.basename(lib[0].abspath)), lib[0])

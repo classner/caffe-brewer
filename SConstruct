@@ -12,10 +12,6 @@ variables = setupOptions()
 # Create the build environment.
 env = makeEnvironment(variables)
 
-# The root path must be added, since the fertilized headers are
-# referenced.
-env.AppendUnique(CPPPATH="#.")
-
 # Only take actions if neither help nor clean is specified.
 if not GetOption("help") and not GetOption("clean"):
     config = env.Configure(custom_tests=checks)
