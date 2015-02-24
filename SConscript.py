@@ -220,9 +220,9 @@ def setupTargets(env, root="."):
     core_objects, headers = SConscript(os.path.join(root, "core.py"),
                                        exports=['proto_files', 'env'],
                                        variant_dir='build/core')
-    link_libs = [cu_lib, mdb_lib, leveldb_lib, gflags_lib, glog_lib, 'libprotobuf.lib']
+    link_libs = [cu_lib, mdb_lib, leveldb_lib, gflags_lib, glog_lib]
     if os.name == 'nt':
-          link_libs.append('shlwapi.lib')
+          link_libs.extend(['libprotobuf.lib', 'shlwapi.lib'])
     # Build the tests.
     test_program = SConscript(os.path.join(root, "tests.py"),
                               exports=['core_objects', 'link_libs', 'env'],
