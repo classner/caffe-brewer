@@ -10,6 +10,7 @@ gpu_lib_env['CCFLAGS'] = [flag for flag in gpu_lib_env['CCFLAGS'] if flag != '-s
 gpu_lib_env['CFLAGS'] = [flag for flag in gpu_lib_env['CFLAGS'] if flag != '-std=c++11' and flag != '-fPIC']
 gpu_lib_env['SHCFLAGS'] = [flag for flag in gpu_lib_env['SHCFLAGS'] if flag != '-std=c++11' and flag != '-fPIC']
 gpu_lib_env['SHCCFLAGS'] = [flag for flag in gpu_lib_env['SHCCFLAGS'] if flag != '-std=c++11' and flag != '-fPIC']
+gpu_lib_env['CCFLAGS'] = ''
 
 if GetOption("cpu_only"):
     file_list = []
@@ -23,6 +24,6 @@ for archi in ['20', '30', '35', '50']:
 cufiles = []
 for fil in file_list:
     cufiles.append(gpu_lib_env.SharedObject(fil))
-
+culib = gpu_lib_env.StaticLibrary(cufiles)
 # The library.
-Return("cufiles")
+Return("cufiles", "culib")

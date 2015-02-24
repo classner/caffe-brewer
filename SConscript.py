@@ -26,7 +26,7 @@ def getRequiredLibs():
   if not GetOption("with_python"):
     req_libs = [lib for lib in req_libs if not lib == 'boost.python']
   if GetOption("cpu_only"):
-	req_libs = [lib for lib in req_libs if not lib == 'cuda']
+    req_libs = [lib for lib in req_libs if not lib == 'cuda']
   return req_libs
 
 ####################################
@@ -105,11 +105,13 @@ def makeEnvironment(variables):
                 "DYLD_LIBRARY_PATH",
                 "PYTHONPATH",
                 "CUDA_TOOLKIT_PATH",
-                "CUDA_SDK_PATH"):
+                "CUDA_SDK_PATH",
+                "PROTOC"):
         if key in os.environ.keys():
             shellEnv[key] = os.environ[key]
     # Create build enviromnent.
     env = Environment(variables=variables, ENV=shellEnv)
+    env["PROTOC"] = os.environ["PROTOC"]
     if not GetOption("cpu_only"):
         env.Tool('nvcc')
     env.Tool('protoc')
@@ -135,6 +137,7 @@ def makeEnvironment(variables):
         env.AppendUnique(CPPDEFINES=['_VARIADIC_MAX=10'])
         # Each object has its own pdb, so -jN works
         env.AppendUnique(CCFLAGS=["/Zi", "/Fd${TARGET}.pdb"])
+        env.AppendUnique(LINKFLAGS=["/OPT:NOREF"])
     # Specifics for icl.
     if env['CC'] == 'icl':
         # 3199: triggered in boost serialization
@@ -173,10 +176,12 @@ def makeEnvironment(variables):
     if GetOption('cpu_only'):
         env.AppendUnique(CPPDEFINES=['CPU_ONLY'])
     # Add dependency include folders.
-    print env['CPPPATH']
     if os.name == 'nt':
         env.PrependUnique(CPPPATH=[Dir('#dependencies/glog-0.3.3/src/windows').abspath])
         env.PrependUnique(CPPPATH=[Dir('#dependencies/gflags-2.1.1/include').abspath])
+        env.PrependUnique(CPPPATH=[Dir(r'C:\Libraries\protobuf\src').abspath])
+        env.PrependUnique(LIBPATH=[Dir(r'C:\Libraries\protobuf\vsprojects\Release').abspath])
+        env.PrependUnique(CPPDEFINES=['GOOGLE_GLOG_DLL_DECL='])
     else:
         env.PrependUnique(CPPPATH=[Dir('#dependencies/gflags-2.1.1-linux/include').abspath])
     env.PrependUnique(CPPPATH=[Dir(r'#dependencies/leveldb/include').abspath])
@@ -196,6 +201,9 @@ def setupTargets(env, root="."):
                                     exports=['env'],
                                     variant_dir='build/gflags')
     # Build glog on Windows.
+    glog_lib, glog_headers = SConscript(os.path.join(root, "dependencies", "glog.py"),
+                                    exports=['env'],
+                                    variant_dir='build/glog')
     # Build leveldb.
     leveldb_lib, leveldb_headers = SConscript(os.path.join(root, "dependencies", "leveldb.py"),
                                     exports=['env'],
@@ -205,29 +213,34 @@ def setupTargets(env, root="."):
                                       exports=['env'],
                                       variant_dir='build/mdb')
     # Build the CUDA parts.
-    cu_objects = SConscript(os.path.join(root, "gpu.py"),
-                            exports=['env'],
-                            variant_dir='build/CUDA')
+    cu_objects, cu_lib = SConscript(os.path.join(root, "gpu.py"),
+                                    exports=['env'],
+                                    variant_dir='build/CUDA')
     # Build the library core.
-    lib, headers = SConscript(os.path.join(root, "core.py"),
-                              exports=['proto_files', 'cu_objects', 'env'],
-                              variant_dir='build/core')
-    link_libs = [lib, mdb_lib, leveldb_lib, gflags_lib]
+    core_objects, headers = SConscript(os.path.join(root, "core.py"),
+                                       exports=['proto_files', 'env'],
+                                       variant_dir='build/core')
+    link_libs = [cu_lib, mdb_lib, leveldb_lib, gflags_lib, glog_lib, 'libprotobuf.lib']
+    if os.name == 'nt':
+          link_libs.append('shlwapi.lib')
     # Build the tests.
     test_program = SConscript(os.path.join(root, "tests.py"),
-                              exports=['link_libs', 'env'],
+                              exports=['core_objects', 'link_libs', 'env'],
                               variant_dir='build/tests')
+    lib = test_program
     if GetOption("with_python"):
-		# Build the python interface.
-		pycaffe = SConscript(os.path.join(root, "python.py"),
-							 exports=['link_libs', 'env'],
-							 variant_dir='build/python')
+        # Build the python interface.
+        pycaffe = SConscript(os.path.join(root, "python.py"),
+                             exports=['link_libs', 'env'],
+                             variant_dir='build/python')
     if os.name == 'nt':
+        pass
         #project_lib = env.InstallAs(os.path.join(Dir('#lib').abspath, os.path.basename(lib[1].abspath)), lib[1])
-        project_bin = env.InstallAs(os.path.join(Dir('#bin').abspath, os.path.basename(lib[0].abspath)), lib[0])
+        #project_bin = env.InstallAs(os.path.join(Dir('#bin').abspath, os.path.basename(lib[0].abspath)), lib[0])
     else:
+        pass
         #project_lib = env.InstallAs(os.path.join(Dir('#lib').abspath, os.path.basename(lib[0].abspath)), lib[0])
-        project_bin = env.InstallAs(os.path.join(Dir('#bin').abspath, os.path.basename(lib[0].abspath)), lib[0])
+        #project_bin = env.InstallAs(os.path.join(Dir('#bin').abspath, os.path.basename(lib[0].abspath)), lib[0])
     # Install in installation folders.
     prefix = Dir(GetOption("prefix")).abspath
     install_headers = GetOption('install_headers')

@@ -12,6 +12,7 @@ import SCons.Tool
 import SCons.Scanner.C
 import SCons.Defaults
 import os
+import sys
 import platform
 
 
@@ -22,24 +23,37 @@ def get_cuda_paths():
   """
 
   # determine defaults
+  is_64bits = sys.maxsize > 2**32
   if os.name == 'nt':
+    if is_64bits:
+        lib_add_dir = 'x64'
+    else:
+        lib_add_dir = 'Win32'
     bin_path = r'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin'
-    lib_path = r'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\x64'
+    lib_path = r'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\%s' % (lib_add_dir)
     inc_path = r'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include'
   elif os.name == 'posix':
+    if is_64bits:
+        lib_add_dir = 'lib64'
+    else:
+        lib_add_dir = 'lib'
     bin_path = '/usr/local/cuda/bin'
-    lib_path = '/usr/local/cuda/lib'
+    lib_path = '/usr/local/cuda/%s' % (lib_add_dir)
     inc_path = '/usr/local/cuda/include'
-  else:
-    raise ValueError, 'Error: unknown OS.  Where is nvcc installed?'
+  elif not 'CUDA_ROOT' in os.environ or \
+       not 'CUDA_LIB_DIR' in os.environ or \
+       not 'CUDA_INCLUDE_DIR' in os.environ:
+    raise ValueError, 'Error: unknown OS.  Where is nvcc installed? ' +\
+      'Edit me, or set CUDA_ROOT, CUDA_LIB_DIR and CUDA_INCLUDE_DIR as'+\
+      'environment variables.'
 
   # override with environement variables
-  if 'CUDA_BIN_PATH' in os.environ:
-    bin_path = os.path.abspath(os.environ['CUDA_BIN_PATH'])
-  if 'CUDA_LIB_PATH' in os.environ:
-    lib_path = os.path.abspath(os.environ['CUDA_LIB_PATH'])
-  if 'CUDA_INC_PATH' in os.environ:
-    inc_path = os.path.abspath(os.environ['CUDA_INC_PATH'])
+  if 'CUDA_ROOT' in os.environ:
+    bin_path = os.path.join(os.path.abspath(os.environ['CUDA_ROOT']), 'bin')
+  if 'CUDA_LIB_DIR' in os.environ:
+    lib_path = os.path.abspath(os.environ['CUDA_LIB_DIR'])
+  if 'CUDA_INCLUDE_DIR' in os.environ:
+    inc_path = os.path.abspath(os.environ['CUDA_INCLUDE_DIR'])
 
   return (bin_path,lib_path,inc_path)
 
