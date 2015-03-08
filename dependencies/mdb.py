@@ -24,7 +24,7 @@ else:
            lines.append("#include <sys/types.h>" + os.linesep)
            lines.append("typedef int64_t ssize_t;" + os.linesep)
            continue
-        elif line.strip().startswith("#include <unistd.h>" + os.linesep):
+        elif line.strip().startswith("#include <unistd.h>"):
            continue
         else:
             lines.append(line)

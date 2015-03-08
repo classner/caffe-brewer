@@ -1,7 +1,11 @@
 .sconf_temp
 .sconsign.dblite
 bin
+include
+lib
+objects
 build
+python/caffe/proto
 config.log
 *.a
 *.la

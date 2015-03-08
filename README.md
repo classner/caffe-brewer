@@ -66,16 +66,19 @@ Clone the repository:
 
 Pull in the submodules:
 
-`git submodule update --init --recursive`
+~~~~~
+cd caffe-brewer
+git submodule update --init --recursive
+~~~~~
 
 Now simply run the magic command `scons` to get the library objects
 built into the folder `objects`, the headers to the folder `includes`,
 and current versions of many dependencies to `lib`. The test executable
-is built into the folder `bin` as `caffe-gtest-all`.
+is built into the folder `bin` as `caffe-gtest-all`. On Windows, you will have to do this in a console with elevated privileges, because MSVC uses an otherwise unwritable folder for temporary files. Optionally, add `--jobs=X`, to use parallel building to speed up the process.
 
 Additional options are `--with-python`, to build the python library
 to the folder `python`, and `--with-tools`, to build the tools also
-into the folder `bin`.
+into the folder `bin`. Use the option `--cpu-only` to build the CPU version of the library.
 
 ### Specify GPU architectures
 
