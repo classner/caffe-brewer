@@ -244,7 +244,9 @@ def setupTargets(env, root="."):
     core_objects, headers = SConscript(os.path.join(root, "core.py"),
                                        exports=['proto_files', 'env'],
                                        variant_dir='build/core')
-    link_libs = [cu_lib, mdb_lib, leveldb_lib, gflags_lib, glog_lib]
+    link_libs = [mdb_lib, leveldb_lib, gflags_lib, glog_lib]
+    if not GetOption("cpu_only"):
+        link_libs.insert(0, cu_lib)
     if os.name == 'nt':
           link_libs.extend(['shlwapi.lib'])
     # Build the tests.

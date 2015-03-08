@@ -25,7 +25,8 @@ cufiles = []
 for fil in file_list:
     cufiles.append(gpu_lib_env.SharedObject(fil))
 culib = gpu_lib_env.StaticLibrary(target='caffe-gpu', source=cufiles)
-installed_culib = gpu_lib_env.InstallAs(os.path.join(str(Dir('lib').srcnode()),
-                                                     os.path.basename(str(culib[0]))), culib)
+if not GetOption('cpu_only'):
+    installed_culib = gpu_lib_env.InstallAs(os.path.join(str(Dir('lib').srcnode()),
+                                                         os.path.basename(str(culib[0]))), culib)
 # The library.
 Return("cufiles", "culib")
