@@ -28,5 +28,7 @@ gflags_lib_env.AppendUnique(CPPPATH=['%s/include/gflags' % subfolder])
 file_list = Glob('%s/*.cc' % subfolder)
 headers = Glob('%s/include' % subfolder)
 # The library.
-lib_file = gflags_lib_env.StaticLibrary('gflags', file_list)
-Return("lib_file", "headers")
+libfile = gflags_lib_env.StaticLibrary('gflags', file_list)
+installed_libfile = gflags_lib_env.InstallAs(os.path.join(str(Dir('../lib').srcnode()),
+                                                          os.path.basename(str(libfile[0]))), libfile[0])
+Return("installed_libfile", "headers")

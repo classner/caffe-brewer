@@ -57,6 +57,8 @@ file_list = Glob('mdb/libraries/liblmdb/mdb.c') + \
             Glob('mdb/libraries/liblmdb/midl.c')
 headers =   Glob('mdb/libraries/liblmdb/mdb.h') + \
             Glob('mdb/libraries/liblmdb/midl.h')
-lib = mdb_lib_env.StaticLibrary('mdb', file_list)
+libfile = mdb_lib_env.StaticLibrary('mdb', file_list)
+installed_libfile = mdb_lib_env.InstallAs(os.path.join(str(Dir('../lib').srcnode()),
+                                                       os.path.basename(str(libfile[0]))), libfile[0])
 # The library.
-Return("lib", "headers")
+Return("installed_libfile", "headers")

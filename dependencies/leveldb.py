@@ -32,6 +32,8 @@ else:
                     not str(fn).endswith("env_chromium.cc")]
     file_list += [Glob('leveldb/port/port_posix.cc')]
 headers = Glob('leveldb/include/*.h')
-lib = leveldb_lib_env.StaticLibrary('leveldb', file_list)
+libfile = leveldb_lib_env.StaticLibrary('leveldb', file_list)
+installed_libfile = leveldb_lib_env.InstallAs(os.path.join(str(Dir('../lib').srcnode()),
+                                                           os.path.basename(str(libfile[0]))), libfile[0])
 # The library.
-Return("lib", "headers")
+Return("libfile", "headers")

@@ -16,8 +16,13 @@ test_objects = []
 for tfile in file_list:
     test_objects.append(tests_env.SharedObject(tfile))
 
-test_program = tests_env.Program(target='gtest-all', source=core_objects+test_objects)
-
-tests_executable = tests_env.Install(Dir('./caffe-framework').srcnode(), test_program)
-# The library.
-Return("test_program")
+test_exec = tests_env.Program(target='caffe-gtest-all', source=core_objects+test_objects)
+installed_test_exec = tests_env.Install(Dir('./bin').srcnode(), test_exec)
+# Install test-datafiles.
+testfiles = Glob('caffe-framework/src/caffe/test/test_data/*') +\
+            Glob('caffe-framework/examples/images/*')
+for tfile in testfiles:
+    relative = os.path.relpath(tfile.abspath, Dir('caffe-framework').abspath)
+    tests_env.InstallAs(os.path.join(str(Dir('bin').srcnode()),
+                                     relative), tfile)
+Return("installed_test_exec")

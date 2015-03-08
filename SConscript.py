@@ -17,6 +17,7 @@ _libs = ['boost.datetime',
          'openblas',
          'opencv',
          'boost.python',
+         'protobuf',
          'cuda']
 
 _checks = GetLibChecks(_libs)
@@ -72,20 +73,24 @@ def setupOptions():
     default_toolchain = 'default'
     if platform.system() == 'Windows':
         default_prefix = r'C:\Libraries'
+        default_caffe_temp = r'C:\temp'
     else:
         default_prefix = "/usr/local"
-    AddOption("--prefix-dir", dest="prefix", type="string", nargs=1, action="store",
-              metavar="DIR", default=default_prefix, help="installation prefix")
-    AddOption("--install-headers-dir", dest="install_headers", type="string", nargs=1, action="store",
-              metavar="DIR", help="location to install header files (overrides --prefix for headers)")
-    AddOption("--install-lib-dir", dest="install_lib", type="string", nargs=1, action="store",
-              metavar="DIR", help="location to install libraries (overrides --prefix for libraries)")
+        default_caffe_temp = r'/tmp'
     AddOption("--rpath", dest="custom_rpath", type="string", action="store",
               help="runtime link paths to add to libraries and executables (unix); may be passed more than once")
+    AddOption("--temp-folder", dest="caffe_temp", type="string", action="store",
+              help=r"temp path for the caffe framework. Default: C:\temp for Win, /tmp for Lin.",
+              default=default_caffe_temp)
+    AddOption("--cuda-architectures", dest="cuda_architectures", type="string", action="store",
+              help="the CUDA architectures ;-separated. Default: 20;30;35;50",
+              default='20;30;35;50')
     AddOption("--cpu-only", help="build only CPU support without GPU", action="store_true",
               dest="cpu_only", default=False)
     AddOption("--with-python", help="build the Python interface", action="store_true",
               dest="with_python", default=False)
+    AddOption("--with-tools", help="build the tools", action="store_true",
+              dest="with_tools", default=False)
     # Add library configuration options.
     AddLibOptions(AddOption, _libs)
     # Default variables.
@@ -111,7 +116,23 @@ def makeEnvironment(variables):
             shellEnv[key] = os.environ[key]
     # Create build enviromnent.
     env = Environment(variables=variables, ENV=shellEnv)
-    env["PROTOC"] = os.environ["PROTOC"]
+    if os.name == 'nt':
+        try:
+            env["PROTOC"] = os.environ["PROTOC"]
+        except:
+            print "It is necessary to define the environment variable "+\
+                  "PROTOC with the executable of the protocol buffers "+\
+                  "compiler!"
+            sys.exit(1)
+    else:
+        try:
+            env["PROTOC"] = os.environ["PROTOC"]
+        except:
+            print "Environment variable PROTOC not defined. Using the "+\
+                  "result of `which protoc` as fallback."
+            # Try determining the path by searching for the executable.
+            env["PROTOC"] = os.popen("which protoc").read().strip()
+    print "Using protoc at %s." % (env["PROTOC"])
     if not GetOption("cpu_only"):
         env.Tool('nvcc')
     env.Tool('protoc')
@@ -179,8 +200,6 @@ def makeEnvironment(variables):
     if os.name == 'nt':
         env.PrependUnique(CPPPATH=[Dir('#dependencies/glog-0.3.3/src/windows').abspath])
         env.PrependUnique(CPPPATH=[Dir('#dependencies/gflags-2.1.1/include').abspath])
-        env.PrependUnique(CPPPATH=[Dir(r'C:\Libraries\protobuf\src').abspath])
-        env.PrependUnique(LIBPATH=[Dir(r'C:\Libraries\protobuf\vsprojects\Release').abspath])
         env.PrependUnique(CPPDEFINES=['GOOGLE_GLOG_DLL_DECL='])
     else:
         env.PrependUnique(CPPPATH=[Dir('#dependencies/gflags-2.1.1-linux/include').abspath])
@@ -194,8 +213,9 @@ def makeEnvironment(variables):
 def setupTargets(env, root="."):
     # Create the protobuffer files.
     proto_files = env.Protoc('caffe-framework/src/caffe/proto/caffe.proto',
-                             PROTOC_PATH='#caffe-framework/src/caffe/proto',
-                             PROTOC_CCOUT='#caffe-framework/src/caffe/proto')
+                             PROTOC_PATH='caffe-framework/src/caffe/proto',
+                             PROTOC_CCOUT='caffe-framework/src/caffe/proto',
+                             PROTOC_PYOUT='python/caffe/proto')
     # Build gflags.
     gflags_lib, gflags_headers = SConscript(os.path.join(root, "dependencies", "gflags.py"),
                                     exports=['env'],
@@ -227,34 +247,16 @@ def setupTargets(env, root="."):
     test_program = SConscript(os.path.join(root, "tests.py"),
                               exports=['core_objects', 'link_libs', 'env'],
                               variant_dir='build/tests')
-    lib = test_program
     if GetOption("with_python"):
         # Build the python interface.
         pycaffe = SConscript(os.path.join(root, "python.py"),
-                             exports=['link_libs', 'env'],
+                             exports=['core_objects', 'link_libs', 'env'],
                              variant_dir='build/python')
-    if os.name == 'nt':
-        pass
-        #project_lib = env.InstallAs(os.path.join(Dir('#lib').abspath, os.path.basename(lib[1].abspath)), lib[1])
-        #project_bin = env.InstallAs(os.path.join(Dir('#bin').abspath, os.path.basename(lib[0].abspath)), lib[0])
-    else:
-        pass
-        #project_lib = env.InstallAs(os.path.join(Dir('#lib').abspath, os.path.basename(lib[0].abspath)), lib[0])
-        #project_bin = env.InstallAs(os.path.join(Dir('#bin').abspath, os.path.basename(lib[0].abspath)), lib[0])
-    # Install in installation folders.
-    prefix = Dir(GetOption("prefix")).abspath
-    install_headers = GetOption('install_headers')
-    install_lib = GetOption('install_lib')
-    if not install_headers:
-      install_headers = os.path.join(prefix, "include")
-    if not install_lib:
-      install_lib = os.path.join(prefix, "lib")
-    env.Alias("install", env.Install(install_lib, lib))
-    for header in Flatten(headers):
-        relative = os.path.relpath(header.abspath, Dir('#include').abspath)
-        env.Alias("install", env.InstallAs(os.path.join(install_headers,
-                                                        'leveldb',
-                                                        relative), header))
+    if GetOption("with_tools"):
+        caffetools = SConscript(os.path.join(root, "tools.py"),
+                                exports=['core_objects', 'link_libs', 'env'],
+                                variant_dir='build/tools')
+    return headers, core_objects, link_libs
 
 Return("setupOptions",
        "makeEnvironment",

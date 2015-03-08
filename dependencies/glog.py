@@ -31,9 +31,11 @@ if os.name == 'nt':
                 Glob('%s/src/vlog_is_on.cc' % subfolder)
     headers = Glob('%s/src/*.h' % subfolder)
     # The library.
-    lib_file = glog_lib_env.StaticLibrary('glog', file_list)
+    libfile = glog_lib_env.StaticLibrary('glog', file_list)
+    installed_libfile = glog_lib_env.InstallAs(os.path.join(str(Dir('../lib').srcnode()),
+                                                            os.path.basename(str(libfile[0]))), libfile[0])
 else:
     # rely on the platform provided build.
-    lib_file = 'glog'
+    installed_libfile = 'glog'
     headers = []
-Return("lib_file", "headers")
+Return("installed_libfile", "headers")

@@ -18,12 +18,14 @@ else:
     file_list = Glob('caffe-framework/src/caffe/layers/*.cu') +\
                 Glob('caffe-framework/src/caffe/util/*.cu')
 # Boost 1.54 workaround.
-#gpu_lib_env.AppendUnique(CPPFLAGS=['"-DBOOST_NOINLINE=__attribute__((noinline))"'])
-for archi in ['20', '30', '35', '50']:
+#gpu_lib_env.AppendUnique(CPPFLAGS=['-DBOOST_NOINLINE=__attribute__((noinline))'])
+for archi in GetOption('cuda_architectures').split(';'):
     gpu_lib_env.Append(SHCCFLAGS=['-gencode', 'arch=compute_%s,code=compute_%s' % (archi, archi)])
 cufiles = []
 for fil in file_list:
     cufiles.append(gpu_lib_env.SharedObject(fil))
-culib = gpu_lib_env.StaticLibrary(cufiles)
+culib = gpu_lib_env.StaticLibrary(target='caffe-gpu', source=cufiles)
+installed_culib = gpu_lib_env.InstallAs(os.path.join(str(Dir('lib').srcnode()),
+                                                     os.path.basename(str(culib[0]))), culib)
 # The library.
 Return("cufiles", "culib")
