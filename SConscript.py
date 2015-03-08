@@ -14,8 +14,10 @@ _libs = ['boost.datetime',
          'boost.interprocess',
          'boost.thread',
          'hdf5',
+		 'numpy',
          'openblas',
          'opencv',
+		 'python',
          'boost.python',
          'protobuf',
          'cuda']
@@ -25,7 +27,9 @@ _checks = GetLibChecks(_libs)
 def getRequiredLibs():
   req_libs = _libs[:]
   if not GetOption("with_python"):
-    req_libs = [lib for lib in req_libs if not lib == 'boost.python']
+    req_libs = [lib for lib in req_libs if lib != 'boost.python' and \
+	                                       lib != 'python' and \
+										   lib != 'numpy']
   if GetOption("cpu_only"):
     req_libs = [lib for lib in req_libs if not lib == 'cuda']
   return req_libs
@@ -206,7 +210,7 @@ def makeEnvironment(variables):
     env.PrependUnique(CPPPATH=[Dir(r'#dependencies/leveldb/include').abspath])
     env.PrependUnique(CPPPATH=[Dir(r'#dependencies/mdb/libraries/liblmdb').abspath])
     if os.name != 'nt':
-        env.AppendUnique(LIBS=['pthread', 'glog', 'protobuf'])
+        env.AppendUnique(LIBS=['pthread', 'glog'])
         env.AppendUnique(CPPFLAGS=['-fPIC'])
     return env
 
@@ -242,7 +246,7 @@ def setupTargets(env, root="."):
                                        variant_dir='build/core')
     link_libs = [cu_lib, mdb_lib, leveldb_lib, gflags_lib, glog_lib]
     if os.name == 'nt':
-          link_libs.extend(['libprotobuf.lib', 'shlwapi.lib'])
+          link_libs.extend(['shlwapi.lib'])
     # Build the tests.
     test_program = SConscript(os.path.join(root, "tests.py"),
                               exports=['core_objects', 'link_libs', 'env'],

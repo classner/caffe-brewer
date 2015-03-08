@@ -17,7 +17,7 @@ projects.
 ## Build instructions
 
 In case you want to use the CUDA interface, get the CUDA toolkit
-[here](https://developer.nvidia.com/cuda-downloads).
+[here](https://developer.nvidia.com/cuda-downloads). In case you want to use the python interface, install the protobuf python library, e.g., by doing `pip install protobuf`.
 
 ### Ubuntu/Debian package requirements:
 
@@ -40,7 +40,7 @@ the `BOOST_ROOT` environment variable.
 * Download google protobuf from [here](https://developers.google.com/protocol-buffers/docs/downloads).
 Get the 'win32' binary version and the source as well. Set the `PROTOC`
 environment variable, pointing to protoc.exe, and the `PROTOBUF_ROOT`
-environment variable, pointing to the protobuf source root.
+environment variable, pointing to the protobuf source root. Enter the 'vsprojects' directory and open the solution file. If necessary, create a new architecture 'x64' by copying the preferences from 'x86' and build the release configuration.
 
 * Download HDF5 from [here](http://www.hdfgroup.org/HDF5/release/obtain5.html)
 and set the `HDF5_ROOT` environment variable.
@@ -125,5 +125,9 @@ as well as linking against all libs in the `lib` folder as well as
 This is still quite a hassle, but there is unfortunately no other
 portable way to my knowledge. If you know another good way, please
 send me a pull request to have others also benefit of your findings!
+
+## Running the tests
+
+All enabled tests pass on Windows and Linux. Just a remark: the default database size is set to 1TB for the tests! At least on Windows, some LMDB tests do not pass if you do not have at least 1TB space available on the harddrive with the temp folder.
 
 __Have fun brewing!__

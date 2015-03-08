@@ -26,18 +26,30 @@ collected_files = Glob('caffe-framework/python/*.py') +\
                   Glob('caffe-framework/python/requirements.txt') +\
                   Glob('caffe-framework/python/caffe/*.py') +\
                   Glob('caffe-framework/python/caffe/*/*')
+# Create proto __init__.py.
+pythondir = str(Dir('python').srcnode())
+pycaffedir = str(Dir('python/caffe').srcnode())
+pycaffeprotodir = str(Dir('python/caffe/proto').srcnode())
+if not os.path.exists(pythondir):
+    os.mkdir(pythondir)
+if not os.path.exists(pycaffedir):
+    os.mkdir(pycaffedir)
+if not os.path.exists(pycaffeprotodir):
+    os.mkdir(pycaffeprotodir)
+with open(os.path.join(str(Dir('python/caffe/proto').srcnode()), '__init__.py'), 'w') as ifile:
+    ifile.write(os.linesep)
 for fobj in collected_files:
     relative = os.path.relpath(fobj.abspath, Dir('caffe-framework/python').abspath)
     py_env.InstallAs(os.path.join(str(Dir('python').srcnode()),
                                       relative), fobj)
-    if os.name == 'nt':
-      installed_py_module = py_env.InstallAs(os.path.join(str(Dir('python').srcnode()),
-                                                          'caffe',
-                                                          '_caffe.pyd'), py_module)
-    else:
-      installed_py_module = py_env.InstallAs(os.path.join(str(Dir('python').srcnode()),
-                                                          'caffe',
-                                                          '_caffe.so'), py_module)
+if os.name == 'nt':
+  installed_py_module = py_env.InstallAs(os.path.join(str(Dir('python').srcnode()),
+													  'caffe',
+													  '_caffe.pyd'), py_module[0])
+else:
+  installed_py_module = py_env.InstallAs(os.path.join(str(Dir('python').srcnode()),
+													  'caffe',
+													  '_caffe.so'), py_module)
 
 # The module.
 Return("py_module")
