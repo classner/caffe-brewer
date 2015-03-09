@@ -73,7 +73,7 @@ def SetupSpawn( env ):
 #####################################
 
 # Setup command-line options
-def setupOptions():
+def setupOptions(rpath=True, python=True, tools=True, libs=True):
     default_toolchain = 'default'
     if platform.system() == 'Windows':
         default_prefix = r'C:\Libraries'
@@ -81,8 +81,15 @@ def setupOptions():
     else:
         default_prefix = "/usr/local"
         default_caffe_temp = r'/tmp'
-    AddOption("--rpath", dest="custom_rpath", type="string", action="store",
-              help="runtime link paths to add to libraries and executables (unix); may be passed more than once")
+    if rpath:
+        AddOption("--rpath", dest="custom_rpath", type="string", action="store",
+                  help="runtime link paths to add to libraries and executables (unix); may be passed more than once")
+    if python:
+        AddOption("--with-python", help="build the Python interface", action="store_true",
+                  dest="with_python", default=False)
+    if tools:
+        AddOption("--with-tools", help="build the tools", action="store_true",
+                  dest="with_tools", default=False)
     AddOption("--temp-folder", dest="caffe_temp", type="string", action="store",
               help=r"temp path for the caffe framework. Default: C:\temp for Win, /tmp for Lin.",
               default=default_caffe_temp)
@@ -91,12 +98,9 @@ def setupOptions():
               default='20;30;35;50')
     AddOption("--cpu-only", help="build only CPU support without GPU", action="store_true",
               dest="cpu_only", default=False)
-    AddOption("--with-python", help="build the Python interface", action="store_true",
-              dest="with_python", default=False)
-    AddOption("--with-tools", help="build the tools", action="store_true",
-              dest="with_tools", default=False)
     # Add library configuration options.
-    AddLibOptions(AddOption, _libs)
+    if libs:
+        AddLibOptions(AddOption, _libs)
     # Default variables.
     variables = Variables()
     # Enable optimization, building of debug symbols.
