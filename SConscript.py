@@ -110,7 +110,7 @@ def setupOptions(rpath=True, python=True, tools=True, libs=True):
     variables.Add("CCFLAGS", default=os.environ.get("CCFLAGS", flags_default), help="compiler flags")
     return variables
 
-def makeEnvironment(variables):
+def makeEnvironment(variables, root='.'):
     shellEnv = {}
     # Some of these don't make sense on Windows, but don't hurt.
     for key in ("PATH",
@@ -198,21 +198,21 @@ def makeEnvironment(variables):
       # Link against non-debug system libraries.
       env.AppendUnique(CPPFLAGS=['/MD'])
     # Main library include folder.
-    env.PrependUnique(CPPPATH=[Dir('#caffe-framework/include').abspath])
+    env.PrependUnique(CPPPATH=[Dir('%s/caffe-framework/include'%(root)).abspath])
     # Contains the gtest includes.
-    env.PrependUnique(CPPPATH=[Dir('#caffe-framework/src').abspath])
+    env.PrependUnique(CPPPATH=[Dir('%s/caffe-framework/src'%(root)).abspath])
     # Configuration options.
     if GetOption('cpu_only'):
         env.AppendUnique(CPPDEFINES=['CPU_ONLY'])
     # Add dependency include folders.
     if os.name == 'nt':
-        env.PrependUnique(CPPPATH=[Dir('#dependencies/glog-0.3.3/src/windows').abspath])
-        env.PrependUnique(CPPPATH=[Dir('#dependencies/gflags-2.1.1/include').abspath])
+        env.PrependUnique(CPPPATH=[Dir('%s/dependencies/glog-0.3.3/src/windows'%(root)).abspath])
+        env.PrependUnique(CPPPATH=[Dir('%s/dependencies/gflags-2.1.1/include'%(root)).abspath])
         env.PrependUnique(CPPDEFINES=['GOOGLE_GLOG_DLL_DECL='])
     else:
-        env.PrependUnique(CPPPATH=[Dir('#dependencies/gflags-2.1.1-linux/include').abspath])
-    env.PrependUnique(CPPPATH=[Dir(r'#dependencies/leveldb/include').abspath])
-    env.PrependUnique(CPPPATH=[Dir(r'#dependencies/mdb/libraries/liblmdb').abspath])
+        env.PrependUnique(CPPPATH=[Dir('%s/dependencies/gflags-2.1.1-linux/include'%(root)).abspath])
+    env.PrependUnique(CPPPATH=[Dir(r'%s/dependencies/leveldb/include'%(root)).abspath])
+    env.PrependUnique(CPPPATH=[Dir(r'%s/dependencies/mdb/libraries/liblmdb'%(root)).abspath])
     if os.name != 'nt':
         env.AppendUnique(LIBS=['pthread', 'glog'])
         env.AppendUnique(CPPFLAGS=['-fPIC'])
@@ -220,10 +220,16 @@ def makeEnvironment(variables):
 
 def setupTargets(env, root="."):
     # Create the protobuffer files.
-    proto_files = env.Protoc('caffe-framework/src/caffe/proto/caffe.proto',
-                             PROTOC_PATH='caffe-framework/src/caffe/proto',
-                             PROTOC_CCOUT='caffe-framework/src/caffe/proto',
-                             PROTOC_PYOUT='python/caffe/proto')
+    proto_files = env.Protoc('%s/caffe-framework/src/caffe/proto/caffe.proto'%(root),
+                             PROTOC_PATH='%s/caffe-framework/src/caffe/proto'%(root),
+                             PROTOC_CCOUT='%s/caffe-framework/src/caffe/proto'%(root),
+                             PROTOC_PYOUT='%s/python/caffe/proto'%(root))
+    proto_header_list = [protof for protof in proto_files if str(protof).endswith('.pb.h')]
+    assert len(proto_header_list) == 1
+    proto_header = env.InstallAs(os.path.join(str(Dir('include').srcnode()),
+                                              'caffe',
+                                              'proto',
+                                              'caffe.pb.h'), proto_header_list[0])
     # Build gflags.
     gflags_lib, gflags_headers = SConscript(os.path.join(root, "dependencies", "gflags.py"),
                                     exports=['env'],
@@ -248,6 +254,7 @@ def setupTargets(env, root="."):
     core_objects, headers = SConscript(os.path.join(root, "core.py"),
                                        exports=['proto_files', 'env'],
                                        variant_dir='build/core')
+    headers += proto_header
     link_libs = [mdb_lib, leveldb_lib, gflags_lib, glog_lib]
     if not GetOption("cpu_only"):
         link_libs.insert(0, cu_lib)

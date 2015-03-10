@@ -120,10 +120,11 @@ as well as linking against all libs in the `lib` folder as well as
 * boost.system,
 * boost.filesystem,
 * boost.thread,
+* cuda,
 * hdf5,
 * openblas,
 * opencv,
-* cuda.
+* protobuf.
 
 This is still quite a hassle, but there is unfortunately no other
 portable way to my knowledge. If you know another good way, please

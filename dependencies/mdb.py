@@ -34,8 +34,7 @@ else:
                            'liblmdb',
                            'mdb.c'), 'w') as outfile:
       outfile.writelines(lines)
-    print("Success! You might have to restart a clean build to use the "+\
-          "updated sources.")
+    print("Success!")
 
 # Create a temporary environment to be able to modify it locally.
 mdb_lib_env['CPPPATH'] = ''
