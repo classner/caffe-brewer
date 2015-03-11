@@ -226,7 +226,7 @@ def setupTargets(env, root="."):
                              PROTOC_PYOUT='%s/python/caffe/proto'%(root))
     proto_header_list = [protof for protof in proto_files if str(protof).endswith('.pb.h')]
     assert len(proto_header_list) == 1
-    proto_header = env.InstallAs(os.path.join(str(Dir('include').srcnode()),
+    proto_header = env.InstallAs(os.path.join(str(Dir('%s/include'%(root)).srcnode()),
                                               'caffe',
                                               'proto',
                                               'caffe.pb.h'), proto_header_list[0])
