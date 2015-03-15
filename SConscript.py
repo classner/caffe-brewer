@@ -73,7 +73,7 @@ def SetupSpawn( env ):
 #####################################
 
 # Setup command-line options
-def setupOptions(rpath=True, python=True, tools=True, libs=True):
+def setupOptions(rpath=True, python=True, tools=True, libs=True, debug=True, tests=True):
     default_toolchain = 'default'
     if platform.system() == 'Windows':
         default_prefix = r'C:\Libraries'
@@ -90,6 +90,12 @@ def setupOptions(rpath=True, python=True, tools=True, libs=True):
     if tools:
         AddOption("--with-tools", help="build the tools", action="store_true",
                   dest="with_tools", default=False)
+    if debug:
+        AddOption("--disable-optimizations", dest="debug_build", action="store_true",
+                  default=False, help="disable optimizations")
+    if tests:
+        AddOption("--with-tests", dest="with_tests", action="store_true",
+                  default=False, help="build the tests")
     AddOption("--temp-folder", dest="caffe_temp", type="string", action="store",
               help=r"temp path for the caffe framework. Default: C:\temp for Win, /tmp for Lin.",
               default=default_caffe_temp)
@@ -195,8 +201,13 @@ def makeEnvironment(variables, root='.'):
     if os.name == 'nt':
         env.AppendUnique(CPPDEFINES=['LEVELDB_PLATFORM_WINDOWS', 'OS_WIN', 'WIN32'])
     if env['CC'] == 'cl' or env['CC'] == 'icl' and os.name == 'nt':
-      # Link against non-debug system libraries.
-      env.AppendUnique(CPPFLAGS=['/MD'])
+      if GetOption('debug_build'):
+        # Link against debug system libraries.
+        env.AppendUnique(CPPDEFINES=['_DEBUG', '_SCL_SECURE_NO_WARNINGS'])
+        env.AppendUnique(CCFLAGS = ["/MDd"])
+      else:
+        # Link against non-debug system libraries.
+        env.AppendUnique(CCFLAGS=['/MD'])
     # Main library include folder.
     env.PrependUnique(CPPPATH=[Dir('%s/caffe-framework/include'%(root)).abspath])
     # Contains the gtest includes.
@@ -261,9 +272,10 @@ def setupTargets(env, root="."):
     if os.name == 'nt':
           link_libs.extend(['shlwapi.lib'])
     # Build the tests.
-    test_program = SConscript(os.path.join(root, "tests.py"),
-                              exports=['core_objects', 'link_libs', 'env'],
-                              variant_dir='build/tests')
+    if GetOption("with_tests"):
+        test_program = SConscript(os.path.join(root, "tests.py"),
+                                  exports=['core_objects', 'link_libs', 'env'],
+                                  variant_dir='build/tests')
     if GetOption("with_python"):
         # Build the python interface.
         pycaffe = SConscript(os.path.join(root, "python.py"),

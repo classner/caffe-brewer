@@ -14,7 +14,13 @@ if os.name == 'nt':
       # Set warning level to 3 (highest, before all warnings).
       glog_lib_env.AppendUnique(CPPFLAGS=['/W3'])
       glog_lib_env.AppendUnique(CPPFLAGS=['/TP'])
-      glog_lib_env.AppendUnique(CPPFLAGS=['/MD'])
+      if GetOption('debug_build'):
+        # Link against debug system libraries.
+        env.AppendUnique(CPPDEFINES=['_DEBUG', '_SCL_SECURE_NO_WARNINGS'])
+        env.Append(CCFLAGS = ["/MDd"])
+      else:
+        # Link against non-debug system libraries.
+        env.AppendUnique(CPPFLAGS=['/MD'])
       glog_lib_env.AppendUnique(CPPFLAGS=['/EHsc'])
       glog_lib_env.AppendUnique(CPPFLAGS=['/nologo'])
       glog_lib_env.AppendUnique(CPPFLAGS=['/GL'])

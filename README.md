@@ -74,11 +74,10 @@ git submodule update --init --recursive
 Now simply run the magic command `scons` to get the library objects
 built into the folder `objects`, the headers to the folder `includes`,
 and current versions of many dependencies to `lib`. The test executable
-is built into the folder `bin` as `caffe-gtest-all`. On Windows, you will have to do this in a console with elevated privileges, because MSVC uses an otherwise unwritable folder for temporary files. Optionally, add `--jobs=X`, to use parallel building to speed up the process.
+is built into the folder `bin` as `caffe-gtest-all` if you use the option `--with-tests`. On Windows, you will have to do this in a console with elevated privileges, because MSVC uses an otherwise unwritable folder for temporary files. Optionally, add `--jobs=X`, to use parallel building to speed up the process.
 
 Additional options are `--with-python`, to build the python library
-to the folder `python`, and `--with-tools`, to build the tools also
-into the folder `bin`. Use the option `--cpu-only` to build the CPU version of the library.
+to the folder `python`, `--with-tools`, to build the tools into the folder `bin` and `--disable-optimization` on Windows to get a debug build. Use the option `--cpu-only` to build the CPU version of the library.
 
 ### Specify GPU architectures
 

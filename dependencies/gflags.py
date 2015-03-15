@@ -12,10 +12,16 @@ if gflags_lib_env['CC'] == 'cl':
   # Set warning level to 3 (highest, before all warnings).
   gflags_lib_env.AppendUnique(CPPFLAGS='/W3')
   gflags_lib_env.AppendUnique(CPPFLAGS='/TP')
-  gflags_lib_env.AppendUnique(CPPFLAGS='/MD')
   gflags_lib_env.AppendUnique(CPPFLAGS='/GL')
   gflags_lib_env.AppendUnique(CPPFLAGS=['/nologo'])
   gflags_lib_env.AppendUnique(CPPDEFINES='WIN32;_WINDOWS;GFLAGS_IS_A_DLL=0'.split(';'))
+  if GetOption('debug_build'):
+    # Link against debug system libraries.
+    env.AppendUnique(CPPDEFINES=['_DEBUG', '_SCL_SECURE_NO_WARNINGS'])
+    env.Append(CCFLAGS = ["/MDd"])
+  else:
+    # Link against non-debug system libraries.
+    env.AppendUnique(CPPFLAGS=['/MD'])
 else:
   gflags_lib_env.AppendUnique(CCFLAGS=['-O2','-std=c++11','-g','-fPIC'])
 if os.name == 'nt':

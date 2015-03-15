@@ -10,6 +10,11 @@ core_lib_env = env.Clone()
 if core_lib_env['CC'] == 'cl':
   # Set warning level to 3 (highest, before all warnings).
   core_lib_env.AppendUnique(CPPFLAGS='/W3')
+  if core_lib_env.GetOption('debug_build'):
+    core_lib_env.Replace(CCFLAGS=[flag for flag in env['CCFLAGS'] \
+	   if flag not in ['-O2', '-O3', '-Ox', '/O2', '/O3']] +\
+       ['/Od'])
+  core_lib_env.AppendUnique(CCFLAGS=["/Zi", "/Fd${TARGET}.pdb"])
 file_list = proto_files[:1] + \
             Glob('caffe-framework/src/caffe/*.cpp') + \
             Glob('caffe-framework/src/caffe/layers/*.cpp') + \
