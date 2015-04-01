@@ -26,31 +26,48 @@ In case you want to use the CUDA interface, get the CUDA toolkit
 
 ### Windows package requirements:
 
+* Python and SCons to provide the build system (the most recent, non-pip
+version of SCons is required to build with VS2013!)
 * Boost
 * google protobuf (protoc must be available on the command line)
 * HDF5
 * OpenBLAS
 * OpenCV
 
-__How to get these quickly:__
+__How to get these quickly__ (there are a lot of path modifications and
+environment variables to be set, which is encapsulated in the file
+`setup_paths.bat` for your convenience. Edit it as required to not have
+to fiddle around in the system preferences):
 
 * Download Boost from [here](http://www.boost.org/users/download/). Set
-the `BOOST_ROOT` environment variable.
+the `BOOST_ROOT` environment variable to the extracted folder. If
+you downloaded the binary version, create the folder `stage` and move
+the folder with the library files into it; renaming it to `lib`.
 
 * Download google protobuf from [here](https://developers.google.com/protocol-buffers/docs/downloads).
-Get the 'win32' binary version and the source as well. Set the `PROTOC`
-environment variable, pointing to protoc.exe, and the `PROTOBUF_ROOT`
-environment variable, pointing to the protobuf source root. Enter the 'vsprojects' directory and open the solution file. If necessary, create a new architecture 'x64' by copying the preferences from 'x86' and build the release configuration.
+Set the `PROTOBUF_ROOT` environment variable, pointing to the unpacked
+folder. Enter the 'vsprojects' directory and open the solution file.
+Build the entire solution (usually two runs are required to build
+completely, since there are dependencies between projects that are not
+encoded in the solution). Create a new architecture 'x64' by copying 
+the preferences from 'x86' and do the same once more for Release and
+Debug configurations.
 
 * Download HDF5 from [here](http://www.hdfgroup.org/HDF5/release/obtain5.html)
-and set the `HDF5_ROOT` environment variable.
+and set the `HDF5_ROOT` environment variable. The default installation
+folder contains spaces, which is a problem on the command line (yes, we
+are in the 21st century... -.-). If necessary, just move the folder.
+Add the bin folder to your path.
 
-* Download OpenBLAS binary from [here](http://www.openblas.net/). Set the
+* Download the OpenBLAS binary from [here](http://www.openblas.net/). Set the
 `OPENBLAS_ROOT` environment variable. Rename `lib\openblas.dll.a` to
-`lib\openblas.dll.a.lib` and add the `bin` folder to your path.
+`lib\openblas.dll.a.lib` and add the `bin` folder to your path. If
+necessary (you have no MinGW installed), also download `mingw64_dll.zip`
+and also extract it to the `bin` folder.
 
 * Download OpenCV from [here](http://opencv.org/downloads.html). Set
-the `OPENCV_ROOT` environment variable.
+the `OPENCV_ROOT` and `OPENCV_VERSION` environment variables and add
+the `bin` folder to your path.
 
 To build, you will need `cl.exe` on your path (e.g., by using the
 Visual Studio command line) and the shell must have elevated
