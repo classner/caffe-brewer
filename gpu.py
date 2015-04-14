@@ -12,6 +12,9 @@ gpu_lib_env['SHCFLAGS'] = [flag for flag in gpu_lib_env['SHCFLAGS'] if flag != '
 gpu_lib_env['SHCCFLAGS'] = [flag for flag in gpu_lib_env['SHCCFLAGS'] if flag != '-std=c++11' and flag != '-fPIC']
 gpu_lib_env['CCFLAGS'] = ''
 
+if gpu_lib_env.GetOption('debug_build'):
+	gpu_lib_env.AppendUnique(SHCCFLAGS=["-D_CUDACC_", "-D_DEBUG", "-g", "-O0", "-G"]) 
+
 if GetOption("cpu_only"):
     file_list = []
 else:
