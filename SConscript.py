@@ -14,10 +14,10 @@ _libs = ['boost.datetime',
          'boost.interprocess',
          'boost.thread',
          'hdf5',
-		 'numpy',
+         'numpy',
          'openblas',
          'opencv',
-		 'python',
+         'python',
          'boost.python',
          'protobuf',
          'cuda']
@@ -120,6 +120,8 @@ def makeEnvironment(variables, root='.'):
     shellEnv = {}
     # Some of these don't make sense on Windows, but don't hurt.
     for key in ("PATH",
+                "CXX",
+                "CC",
                 "LD_LIBRARY_PATH",
                 "DYLD_LIBRARY_PATH",
                 "PYTHONPATH",
@@ -147,6 +149,11 @@ def makeEnvironment(variables, root='.'):
             # Try determining the path by searching for the executable.
             env["PROTOC"] = os.popen("which protoc").read().strip()
     print "Using protoc at %s." % (env["PROTOC"])
+    if "CXX" in os.environ:
+	env["CXX"] = os.environ["CXX"]
+    if "CC" in os.environ:
+        env["CC"] = os.environ["CC"]
+    print "Using CXX: %s, CC: %s" % (env["CXX"], env["CC"]) 
     if not GetOption("cpu_only"):
         env.Tool('nvcc')
     env.Tool('protoc')

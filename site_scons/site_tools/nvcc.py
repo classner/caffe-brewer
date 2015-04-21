@@ -137,7 +137,7 @@ def generate(env):
   env['NVCCCOM']   = '$NVCC -o $TARGET -c $NVCCFLAGS $_NVCCWRAPCFLAGS $NVCCWRAPCCFLAGS $_NVCCCOMCOM $SOURCES'
   # quick fix for debug build...
   env['NVCCDEBUGFIX'] = ''
-  if env.GetOption('debug_build'):
+  if env.GetOption('debug_build') and env['CC'] == 'cl':
     env['NVCCDEBUGFIX'] = '-Xcompiler "/MDd /O2 /Fd${TARGET}.pdb"'
   env['SHNVCCCOM'] = '$SHNVCC -o $TARGET -c $SHNVCCFLAGS $NVCCDEBUGFIX $_NVCCWRAPSHCFLAGS $_NVCCWRAPSHCCFLAGS $_NVCCCOMCOM $SOURCES'
   
