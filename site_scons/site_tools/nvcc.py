@@ -135,7 +135,11 @@ def generate(env):
   
   # 'NVCC Command'
   env['NVCCCOM']   = '$NVCC -o $TARGET -c $NVCCFLAGS $_NVCCWRAPCFLAGS $NVCCWRAPCCFLAGS $_NVCCCOMCOM $SOURCES'
-  env['SHNVCCCOM'] = '$SHNVCC -o $TARGET -c $SHNVCCFLAGS $_NVCCWRAPSHCFLAGS $_NVCCWRAPSHCCFLAGS $_NVCCCOMCOM $SOURCES'
+  # quick fix for debug build...
+  env['NVCCDEBUGFIX'] = ''
+  if env.GetOption('debug_build'):
+    env['NVCCDEBUGFIX'] = '-Xcompiler "/MDd /O2 /Fd${TARGET}.pdb"'
+  env['SHNVCCCOM'] = '$SHNVCC -o $TARGET -c $SHNVCCFLAGS $NVCCDEBUGFIX $_NVCCWRAPSHCFLAGS $_NVCCWRAPSHCCFLAGS $_NVCCCOMCOM $SOURCES'
   
   # the suffix of CUDA source files is '.cu'
   env['CUDAFILESUFFIX'] = '.cu'
