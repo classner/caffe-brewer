@@ -10,6 +10,7 @@ if os.name == 'nt':
     leveldb_lib_env.AppendUnique(CPPDEFINES=['LEVELDB_PLATFORM_WINDOWS'])
 else:
     leveldb_lib_env.AppendUnique(CPPDEFINES=['LEVELDB_PLATFORM_POSIX'])
+    leveldb_lib_env.AppendUnique(CPPFLAGS=['-std=c++11'])
 # Activate symbol exporting.
 if leveldb_lib_env['CC'] == 'cl':
   # Set warning level to 3 (highest, before all warnings).
