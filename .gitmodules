@@ -6,7 +6,7 @@
     url = https://github.com/ChrislS/caffe.git
 [submodule "dependencies/mdb"]
     path = dependencies/mdb
-    url = https://gitorious.org/mdb/mdb.git
+    url = https://github.com/LMDB/lmdb.git
 [submodule "dependencies/leveldb"]
     path = dependencies/leveldb
     url = https://github.com/ChrislS/leveldb.git
